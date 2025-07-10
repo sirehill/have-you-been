@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Have you been? 🌍</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Special Elite', Courier, monospace;
+      background: #f8f5e4;
+      color: #333;
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 100vh;
+    }
+
+    #sidebar {
+      flex: 0 0 300px;
+      border-right: 3px dashed #888;
+      background: #fdfaf1;
+      padding: 20px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #xp-bar {
+      width: 100%;
+      background: #ddd;
+      height: 25px;
+      border: 2px dashed #555;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #xp-fill {
+      height: 100%;
+      background: repeating-linear-gradient(
+        -45deg,
+        #4caf50,
+        #4caf50 10px,
+        #8bc34a 10px,
+        #8bc34a 20px
+      );
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    #xp-text {
+      margin-top: 5px;
+      font-size: 14px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    #continents ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    #continents li {
+      display: block;
+      background: #fff;
+      border: 2px dashed #666;
+      border-radius: 12px;
+      padding: 5px 10px;
+      margin: 6px 0;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .sublist li {
+      padding-left: 20px;
+    }
+
+    .flag {
+      font-family: system-ui, apple color emoji, segoe ui emoji, noto color emoji, sans-serif;
+    }
+
+    .sublist {
+      list-style: none;
+      padding-left: 10px;
+      display: none;
+    }
+
+    .check {
+      margin-left: 5px;
+      font-size: 18px;
+      color: green;
+      display: inline-block;
+      transform: scale(0);
+      opacity: 0;
+      animation: stamp-pop 0.3s forwards;
+    }
+
+    @keyframes stamp-pop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.4);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #main {
+      flex: 1;
+      padding: 40px;
+      text-align: center;
+      background: #fcf9e8;
+    }
+
+    #main h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    #map {
+      height: 400px;
+      margin-top: 20px;
+      border: 3px solid #555;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 2px dashed #555;
+      background: #fff;
+      text-align: left;
+      font-size: 16px;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+      border: 2px dashed #888;
+      padding: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    input[type="file"]:hover {
+      background: #f0ede2;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div>
+      <h3>XP & Level</h3>
+      <div id="xp-bar">
+        <div id="xp-fill"></div>
+      </div>
+      <div id="xp-text">Level 1 — 0 XP</div>
+    </div>
+
+    <div id="continents">
+      <h3>Continents</h3>
+      <ul>
+        <li id="Africa">🌍 Africa ▼</li>
+        <ul id="AfricaCountries" class="sublist">
+          <li id="Egypt"><span class="flag">🇪🇬</span> Egypt</li>
+          <li id="Kenya"><span class="flag">🇰🇪</span> Kenya</li>
+        </ul>
+
+        <li id="Antarctica">🐧 Antarctica</li>
+
+        <li id="Asia">🗻 Asia ▼</li>
+        <ul id="AsiaCountries" class="sublist">
+          <li id="Japan"><span class="flag">🇯🇵</span> Japan</li>
+          <li id="India"><span class="flag">🇮🇳</span> India</li>
+          <li id="China"><span class="flag">🇨🇳</span> China</li>
+        </ul>
+
+        <li id="Europe">🏰 Europe ▼</li>
+        <ul id="EuropeCountries" class="sublist">
+          <li id="France"><span class="flag">🇫🇷</span> France</li>
+          <li id="Germany"><span class="flag">🇩🇪</span> Germany</li>
+          <li id="Italy"><span class="flag">🇮🇹</span> Italy</li>
+          <li id="Spain"><span class="flag">🇪🇸</span> Spain</li>
+          <li id="UK"><span class="flag">🇬🇧</span> United Kingdom</li>
+        </ul>
+
+        <li id="North America">🌲 North America ▼</li>
+        <ul id="NorthAmericaCountries" class="sublist">
+          <li id="USA"><span class="flag">🇺🇸</span> USA</li>
+          <li id="Canada"><span class="flag">🇨🇦</span> Canada</li>
+          <li id="Mexico"><span class="flag">🇲🇽</span> Mexico</li>
+        </ul>
+
+        <li id="South America">🦜 South America ▼</li>
+        <ul id="SouthAmericaCountries" class="sublist">
+          <li id="Brazil"><span class="flag">🇧🇷</span> Brazil</li>
+          <li id="Argentina"><span class="flag">🇦🇷</span> Argentina</li>
+        </ul>
+
+        <li id="Oceania">🏝️ Oceania ▼</li>
+        <ul id="OceaniaCountries" class="sublist">
+          <li id="Australia"><span class="flag">🇦🇺</span> Australia</li>
+          <li id="NewZealand"><span class="flag">🇳🇿</span> New Zealand</li>
+        </ul>
+      </ul>
+    </div>
+  </div>
