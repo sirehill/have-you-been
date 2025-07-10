@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Have you been? 🌍</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+      padding: 10px;
+      border: 2px dashed #666;
+    }
+
+    pre {
+      text-align: left;
+      background: #f0f0f0;
+      padding: 20px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Have you been? 🌍</h1>
+  <p>Upload a photo of a town sign:</p>
+  <input type="file" id="imageUpload" accept="image/*" />
+
+  <h3>OCR Result:</h3>
+  <div id="result"></div>
+
+  <script>
+    const imageUpload = document.getElementById('imageUpload');
+    const result = document.getElementById('result');
+
+    async function callGoogleVisionProxy(base64Image) {
+      console.log('📡 Calling /api/vision...');
+      const response = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+
+      const data = await response.json();
+      console.log('✅ Response from /api/vision:', data);
+
+      if (data.responses && data.responses[0].fullTextAnnotation) {
+        return data.responses[0].fullTextAnnotation.text;
+      } else {
+        return 'No text found.';
+      }
+    }
+
+    imageUpload.addEventListener('change', async () => {
+      result.innerHTML = `Processing...`;
+
+      const file = imageUpload.files[0];
+      if (!file) {
+        result.innerHTML = 'Please select an image.';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Image = e.target.result.split(',')[1];
+        const text = await callGoogleVisionProxy(base64Image);
+        result.innerHTML = `<pre>${text}</pre>`;
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
