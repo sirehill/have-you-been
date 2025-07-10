@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Have you been? 🌍</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Special Elite', Courier, monospace;
+      background: #f8f5e4;
+      color: #333;
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 100vh;
+    }
+
+    #sidebar {
+      flex: 0 0 300px;
+      border-right: 3px dashed #888;
+      background: #fdfaf1;
+      padding: 20px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #xp-bar {
+      width: 100%;
+      background: #ddd;
+      height: 25px;
+      border: 2px dashed #555;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #xp-fill {
+      height: 100%;
+      background: repeating-linear-gradient(
+        -45deg,
+        #4caf50,
+        #4caf50 10px,
+        #8bc34a 10px,
+        #8bc34a 20px
+      );
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    #xp-text {
+      margin-top: 5px;
+      font-size: 14px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    #continents ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    #continents li {
+      display: block;
+      background: #fff;
+      border: 2px dashed #666;
+      border-radius: 12px;
+      padding: 5px 10px;
+      margin: 6px 0;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .sublist {
+      list-style: none;
+      padding-left: 20px;
+      display: none;
+    }
+
+    .check {
+      margin-left: 5px;
+      font-size: 18px;
+      color: green;
+      display: inline-block;
+      transform: scale(0);
+      opacity: 0;
+      animation: stamp-pop 0.3s forwards;
+    }
+
+    @keyframes stamp-pop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.4);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    #main {
+      flex: 1;
+      padding: 40px;
+      text-align: center;
+      background: #fcf9e8;
+    }
+
+    #main h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    #map {
+      height: 400px;
+      margin-top: 20px;
+      border: 3px solid #555;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 2px dashed #555;
+      background: #fff;
+      text-align: left;
+      font-size: 16px;
+    }
+
+    input[type="file"] {
+      margin: 20px 0;
+      border: 2px dashed #888;
+      padding: 10px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    input[type="file"]:hover {
+      background: #f0ede2;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div>
+      <h3>XP & Level</h3>
+      <div id="xp-bar">
+        <div id="xp-fill"></div>
+      </div>
+      <div id="xp-text">Level 1 — 0 XP</div>
+    </div>
+
+    <div id="continents">
+      <h3>Continents</h3>
+      <ul>
+        <li id="Africa">🌍 Africa ▼</li>
+        <ul id="AfricaCountries" class="sublist">
+          <li id="Egypt">🇪🇬 Egypt</li>
+          <li id="Kenya">🇰🇪 Kenya</li>
+        </ul>
+
+        <li id="Antarctica">🐧 Antarctica</li>
+
+        <li id="Asia">🗻 Asia ▼</li>
+        <ul id="AsiaCountries" class="sublist">
+          <li id="Japan">🇯🇵 Japan</li>
+          <li id="India">🇮🇳 India</li>
+          <li id="China">🇨🇳 China</li>
+        </ul>
+
+        <li id="Europe">🏰 Europe ▼</li>
+        <ul id="EuropeCountries" class="sublist">
+          <li id="France">🇫🇷 France</li>
+          <li id="Germany">🇩🇪 Germany</li>
+          <li id="Italy">🇮🇹 Italy</li>
+          <li id="Spain">🇪🇸 Spain</li>
+          <li id="UK">🇬🇧 United Kingdom</li>
+        </ul>
+
+        <li id="North America">🌲 North America ▼</li>
+        <ul id="NorthAmericaCountries" class="sublist">
+          <li id="USA">🇺🇸 USA</li>
+          <li id="Canada">🇨🇦 Canada</li>
+          <li id="Mexico">🇲🇽 Mexico</li>
+        </ul>
+
+        <li id="South America">🦜 South America ▼</li>
+        <ul id="SouthAmericaCountries" class="sublist">
+          <li id="Brazil">🇧🇷 Brazil</li>
+          <li id="Argentina">🇦🇷 Argentina</li>
+        </ul>
+
+        <li id="Oceania">🏝️ Oceania ▼</li>
+        <ul id="OceaniaCountries" class="sublist">
+          <li id="Australia">🇦🇺 Australia</li>
+          <li id="NewZealand">🇳🇿 New Zealand</li>
+        </ul>
+      </ul>
+    </div>
+  </div>
+
+  <div id="main">
+    <h1>Have you been? 🌍</h1>
+    <p>Upload a photo of a town sign to stamp your passport:</p>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <div id="result"></div>
+    <div id="map"></div>
+  </div>
+
+  <audio id="stampSound" src="https://assets.mixkit.co/sfx/preview/mixkit-stamp-approved-3584.mp3" preload="auto"></audio>
+
+  <script>
+    const imageUpload = document.getElementById('imageUpload');
+    const result = document.getElementById('result');
+    const xpFill = document.getElementById('xp-fill');
+    const xpText = document.getElementById('xp-text');
+    const stampSound = document.getElementById('stampSound');
+
+    let map;
+    let xp = 0;
+    let level = 1;
+    const XP_PER_LEVEL = 30;
+
+    const COUNTRY_XP = {
+      "Egypt": 10, "Kenya": 10,
+      "Japan": 10, "India": 10, "China": 10,
+      "France": 10, "Germany": 10, "Italy": 10, "Spain": 10, "UK": 10,
+      "USA": 10, "Canada": 10, "Mexico": 10,
+      "Brazil": 10, "Argentina": 10,
+      "Australia": 10, "NewZealand": 10
+    };
+
+    function updateXPBar() {
+      while (xp >= XP_PER_LEVEL) {
+        xp -= XP_PER_LEVEL;
+        level += 1;
+      }
+      xpText.innerText = `Level ${level} — ${xp} XP`;
+      const percent = Math.min(xp / XP_PER_LEVEL * 100, 100);
+      xpFill.style.width = percent + "%";
+    }
+
+    function initMap(lat, lon) {
+      if (!map) {
+        map = L.map('map').setView([lat, lon], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+      } else {
+        map.setView([lat, lon], 6);
+      }
+      L.marker([lat, lon]).addTo(map);
+    }
+
+    function markContinent(continent) {
+      const el = document.getElementById(continent);
+      if (el && !el.querySelector('.check')) {
+        el.innerHTML += `<span class="check">✅</span>`;
+        stampSound.currentTime = 0; stampSound.play();
+      }
+    }
+
+    function markCountry(country, parentContinent) {
+      const el = document.getElementById(country);
+      if (el && !el.querySelector('.check')) {
+        el.innerHTML += `<span class="check">✅</span>`;
+        stampSound.currentTime = 0; stampSound.play();
+        xp += COUNTRY_XP[country] || 0;
+        updateXPBar();
+        markContinent(parentContinent);
+      }
+    }
+
+    function toggle(id) {
+      const list = document.getElementById(id);
+      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    }
+
+    ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"].forEach(c => {
+      document.getElementById(c).addEventListener('click', () => {
+        toggle(c.replace(/\s/g, '') + 'Countries');
+      });
+    });
+
+    async function callGoogleVisionProxy(base64Image) {
+      const response = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+      const data = await response.json();
+      if (data.responses && data.responses[0].fullTextAnnotation) {
+        return data.responses[0].fullTextAnnotation.text;
+      }
+      return '';
+    }
+
+    function extractTownName(rawText) {
+      let text = rawText.toLowerCase();
+      ["welcome to ", "city of ", "town of ", "bienvenido a ", "ciudad de ", "stadt ", "willkommen in "].forEach(phrase => {
+        text = text.replace(phrase, '');
+      });
+      return text.split('\n')[0].trim();
+    }
+
+    imageUpload.addEventListener('change', async () => {
+      result.innerHTML = `Processing...`;
+      const file = imageUpload.files[0];
+      if (!file) {
+        result.innerHTML = 'Select an image.';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Image = e.target.result.split(',')[1];
+        const text = await callGoogleVisionProxy(base64Image);
+        const townName = extractTownName(text);
+        result.innerHTML = `Town: ${townName}`;
+
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(townName)}&limit=1&addressdetails=1`);
+        const data = await res.json();
+        if (data.length === 0) { result.innerHTML += '<br>Not found.'; return; }
+
+        const place = data[0];
+        initMap(place.lat, place.lon);
+        const country = place.address && place.address.country || '';
+
+        if (country.includes('Egypt')) markCountry('Egypt','Africa');
+        if (country.includes('Kenya')) markCountry('Kenya','Africa');
+        if (country.includes('Japan')) markCountry('Japan','Asia');
+        if (country.includes('India')) markCountry('India','Asia');
+        if (country.includes('China')) markCountry('China','Asia');
+        if (country.includes('France')) markCountry('France','Europe');
+        if (country.includes('Germany')) markCountry('Germany','Europe');
+        if (country.includes('Italy')) markCountry('Italy','Europe');
+        if (country.includes('Spain')) markCountry('Spain','Europe');
+        if (country.includes('United Kingdom') || country.includes('UK')) markCountry('UK','Europe');
+        if (country.includes('United States') || country.includes('USA')) markCountry('USA','North America');
+        if (country.includes('Canada')) markCountry('Canada','North America');
+        if (country.includes('Mexico')) markCountry('Mexico','North America');
+        if (country.includes('Brazil')) markCountry('Brazil','South America');
+        if (country.includes('Argentina')) markCountry('Argentina','South America');
+        if (country.includes('Australia')) markCountry('Australia','Oceania');
+        if (country.includes('New Zealand')) markCountry('NewZealand','Oceania');
+
+        result.innerHTML += `<br>Found: ${place.display_name}`;
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
